@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#14532d">
+<title>Santosh Murga Counter | Billing</title>
+<style>
+:root{--green:#14532d;--green2:#166534;--bg:#f4f7f4;--card:#fff;--ink:#17231b;--muted:#65736a;--line:#dfe7e1;--red:#b42318;--orange:#a34b00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:linear-gradient(130deg,#14532d,#237342);color:white;padding:20px 16px 16px;position:sticky;top:0;z-index:3;box-shadow:0 3px 12px #1233}
+header h1{font-size:21px;margin:0 0 4px}header p{margin:0;color:#e0f2e5;font-size:13px}
+nav{display:flex;gap:8px;overflow:auto;padding:10px;background:white;border-bottom:1px solid var(--line);position:sticky;top:76px;z-index:2}
+nav button{white-space:nowrap;border:1px solid var(--line);background:#fff;padding:9px 12px;border-radius:22px;color:var(--ink);font-weight:650}
+nav button.active{background:var(--green);color:#fff;border-color:var(--green)}
+main{max-width:980px;margin:auto;padding:14px}.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px;box-shadow:0 2px 7px #16301a08}
+.stat small{display:block;color:var(--muted);font-size:12px}.stat strong{font-size:22px;display:block;margin-top:5px}.stat em{font-style:normal;color:var(--green);font-size:12px}
+.panel{margin-bottom:14px}.panel h2{font-size:17px;margin:0 0 12px}
+label{display:block;font-size:13px;font-weight:650;margin:10px 0 5px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid #ccd8ce;border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}.full{grid-column:1/-1}
+button.primary,button.secondary,button.danger{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:700;cursor:pointer}
+.primary{background:var(--green);color:white}.secondary{background:#e6f1e8;color:var(--green)}.danger{background:#fee4e2;color:var(--red)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.note{font-size:12px;color:var(--muted);line-height:1.5}.amount{font-weight:800;color:var(--green)}.negative{color:var(--red)!important}
+.list{display:flex;flex-direction:column;gap:9px}.item{border:1px solid var(--line);background:white;border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}.item b{display:block}.item small{color:var(--muted);display:block;margin-top:3px}.item .right{text-align:right;min-width:100px}
+.pill{display:inline-block;padding:3px 8px;border-radius:20px;background:#e6f1e8;color:var(--green);font-size:11px;font-weight:700}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:650}
+footer{text-align:center;padding:18px;color:var(--muted);font-size:12px}
+@media(min-width:700px){.cards{grid-template-columns:repeat(4,minmax(0,1fr))}.stat strong{font-size:25px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><h1>🐔 Santosh Murga Counter</h1><p>Billing • Customer Udhaar • Payment Hisaab</p></header>
+<nav id="nav">
+<button class="active" data-page="home">Dashboard</button><button data-page="bill">+ Naya Bill</button><button data-page="customers">Customers</button><button data-page="ledger">Ledger / Udhaar</button><button data-page="reports">Reports</button>
+</nav>
+<main>
+<section class="page active" id="home">
+<div class="cards">
+<div class="stat"><small>Aaj ki Sale</small><strong id="todaySales">₹0</strong><em>Today's billing</em></div>
+<div class="stat"><small>Aaj Payment Mila</small><strong id="todayPaid">₹0</strong><em>Cash + Online</em></div>
+<div class="stat"><small>Total Udhaar Baaki</small><strong id="totalDue">₹0</strong><em>Sab customers</em></div>
+<div class="stat"><small>Total Customers</small><strong id="customerCount">0</strong><em>Customer register</em></div>
+</div>
+<div class="panel"><h2>🔔 Payment lene wale customers</h2><div id="dueList" class="list"></div></div>
+<div class="panel"><h2>🧾 Recent Bills</h2><div id="recentBills" class="list"></div></div>
+<div class="note">Prototype data is isi browser/device mein save hota hai. Abhi cloud backup ya doosre phone ke saath sync nahi hai.</div>
+</section>
+
+<section class="page" id="bill">
+<div class="panel"><h2>🧾 Naya Bill Banayein</h2>
+<form id="billForm"><div class="grid">
+<div><label>Date</label><input id="billDate" type="date" required></div>
+<div><label>Day</label><input id="billDay" readonly></div>
+<div class="full"><label>Customer select karein</label><select id="billCustomer"><option value="">-- Customer chunein --</option></select></div>
+<div><label>Customer Name</label><input id="billName" required placeholder="Customer ka naam"></div>
+<div><label>Mobile Number</label><input id="billMobile" inputmode="tel" placeholder="10 digit mobile"></div>
+<div class="full"><label>Address</label><input id="billAddress" placeholder="Mohalla / address"></div>
+<div><label>Weight (kg)</label><input id="weight" type="number" min="0.01" step="0.01" value="1" required></div>
+<div><label>Rate (₹ per kg)</label><input id="rate" type="number" min="0" step="0.01" value="200" required></div>
+<div><label>Bill Amount (₹)</label><input id="billAmount" readonly value="200"></div>
+<div><label>Purana Udhaar (₹)</label><input id="oldBalance" readonly value="0"></div>
+<div><label>Aaj Received (₹)</label><input id="received" type="number" min="0" step="0.01" value="0"></div>
+<div><label>Payment Mode</label><select id="payMode"><option>Cash</option><option>Online / UPI</option><option>Mixed</option><option>Udhaar (abhi payment nahi)</option></select></div>
+<div><label>Cash Received (₹)</label><input id="cashReceived" type="number" min="0" step="0.01" value="0"></div>
+<div><label>Online Received (₹)</label><input id="onlineReceived" type="number" min="0" step="0.01" value="0"></div>
+<div class="full"><label>Note (optional)</label><input id="billNote" placeholder="Jaise delivery / extra details"></div>
+</div><div class="panel" style="margin-top:14px;background:#f7fbf7"><div style="display:flex;justify-content:space-between;gap:8px"><span>Total Bill + Purana Udhaar</span><b id="totalBeforePay">₹200</b></div><div style="display:flex;justify-content:space-between;gap:8px;margin-top:8px"><span>Naya Baaki Balance</span><b class="amount" id="newDue">₹200</b></div></div>
+<div class="actions"><button class="primary" type="submit">Bill Save Karein</button><button class="secondary" type="button" id="resetBill">Clear Form</button></div></form>
+<p class="note">Bill save karne par customer ledger update hoga. Received amount cash aur online amount ke total se match hona chahiye.</p>
+</div></section>
+
+<section class="page" id="customers">
+<div class="panel"><h2>👥 Customer Add Karein</h2><form id="customerForm"><div class="grid">
+<div><label>Customer Name *</label><input id="cName" required placeholder="Naam"></div>
+<div><label>Mobile Number</label><input id="cMobile" inputmode="tel" placeholder="Mobile"></div>
+<div><label>Address</label><input id="cAddress" placeholder="Address"></div>
+<div><label>Opening / Purana Udhaar (₹)</label><input id="cOpening" type="number" min="0" step="0.01" value="0"></div>
+</div><div class="actions"><button class="primary">Customer Save Karein</button></div></form></div>
+<div class="panel"><h2>Customer List</h2><input id="customerSearch" placeholder="Naam ya mobile se search karein"><div id="customerList" class="list" style="margin-top:10px"></div></div>
+</section>
+
+<section class="page" id="ledger">
+<div class="panel"><h2>📒 Customer Ledger</h2><label>Customer chunein</label><select id="ledgerCustomer"><option value="">-- Customer chunein --</option></select><div id="ledgerDetail" style="margin-top:12px"></div></div>
+<div class="panel"><h2>💰 Purane Bill ke liye Payment Jama Karein</h2><form id="paymentForm"><div class="grid">
+<div><label>Customer</label><select id="paymentCustomer" required><option value="">-- Customer chunein --</option></select></div>
+<div><label>Payment Amount (₹)</label><input id="paymentAmount" type="number" min="0.01" step="0.01" required></div>
+<div><label>Payment Mode</label><select id="paymentMode"><option>Cash</option><option>Online / UPI</option></select></div>
+<div><label>Date</label><input id="paymentDate" type="date" required></div>
+</div><div class="actions"><button class="primary">Payment Save Karein</button></div></form></div>
+</section>
+
+<section class="page" id="reports">
+<div class="panel"><h2>📊 Reports</h2><div class="grid">
+<div><label>Start Date</label><input id="reportStart" type="date"></div><div><label>End Date</label><input id="reportEnd" type="date"></div>
+</div><div class="actions"><button class="primary" id="runReport">Report Dekhein</button><button class="secondary" id="exportCsv">CSV Export</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:10px 12px;border-radius:10px;cursor:pointer">Backup Import<input type="file" id="importFile" accept=".json,application/json" style="display:none"></label></div><div id="reportOutput" style="margin-top:14px"></div></div>
+<div class="panel"><h2>WhatsApp / SMS</h2><p class="note">Customer ledger se reminder khol sakte hain. WhatsApp message aap review karke send karenge. SMS app bhi khulegi; actual sending phone/network aur aapki confirmation par depend karegi. Automated bulk reminders ke liye alag approved messaging setup chahiye.</p></div>
+</section>
+</main><footer>Santosh Murga Counter • Billing Prototype v1</footer>
+<script>
+const $=id=>document.getElementById(id), money=n=>'₹'+(Number(n)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const today=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const dayName=s=>s?new Date(s+'T12:00:00').toLocaleDateString('hi-IN',{weekday:'long'}):'';
+let db={customers:[],bills:[],payments:[]};
+try{db=JSON.parse(localStorage.getItem('smc-db-v1'))||db}catch(e){}
+function save(){localStorage.setItem('smc-db-v1',JSON.stringify(db));renderAll()}
+function due(c){return Number(c.opening||0)+db.bills.filter(b=>b.customerId===c.id).reduce((s,b)=>s+b.amount,0)-db.bills.filter(b=>b.customerId===c.id).reduce((s,b)=>s+b.received,0)-db.payments.filter(p=>p.customerId===c.id).reduce((s,p)=>s+p.amount,0)}
+function customer(id){return db.customers.find(c=>c.id===id)}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function options(id){let el=$(id),old=el.value;el.innerHTML='<option value="">-- Customer chunein --</option>'+db.customers.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}${c.mobile?' · '+escapeHtml(c.mobile):''}</option>`).join('');if(db.customers.some(c=>c.id===old))el.value=old}
+function renderAll(){options('billCustomer');options('ledgerCustomer');options('paymentCustomer');renderHome();renderCustomers();updateBillMath();renderLedger()}
+function renderHome(){let t=today(),sales=db.bills.filter(b=>b.date===t).reduce((s,b)=>s+b.amount,0),paid=db.bills.filter(b=>b.date===t).reduce((s,b)=>s+b.received,0)+db.payments.filter(p=>p.date===t).reduce((s,p)=>s+p.amount,0);
+$('todaySales').textContent=money(sales);$('todayPaid').textContent=money(paid);$('totalDue').textContent=money(db.customers.reduce((s,c)=>s+due(c),0));$('customerCount').textContent=db.customers.length;
+let dues=db.customers.filter(c=>due(c)>0.009).sort((a,b)=>due(b)-due(a));$('dueList').innerHTML=dues.length?dues.map(c=>`<div class="item"><div><b>${escapeHtml(c.name)}</b><small>${escapeHtml(c.mobile||'Mobile nahi diya')}</small></div><div class="right"><b class="negative">${money(due(c))}</b><small><button class="secondary" onclick="openLedger('${c.id}')">Hisaab dekhein</button></small></div></div>`).join(''):'<div class="empty">Kisi customer ka udhaar baaki nahi hai 🎉</div>';
+let recent=[...db.bills].sort((a,b)=>b.createdAt-a.createdAt).slice(0,5);$('recentBills').innerHTML=recent.length?recent.map(b=>`<div class="item"><div><b>${escapeHtml(b.name)} · ${b.weight} kg</b><small>${b.date} • ${escapeHtml(b.day)}</small></div><div class="right"><b>${money(b.amount)}</b><small>Baaki ${money(b.oldBalance+b.amount-b.received)}</small></div></div>`).join(''):'<div class="empty">Abhi koi bill nahi. “Naya Bill” se shuru karein.</div>'}
+function renderCustomers(){let q=($('customerSearch').value||'').toLowerCase();let arr=db.customers.filter(c=>(c.name+' '+c.mobile+' '+c.address).toLowerCase().includes(q));$('customerList').innerHTML=arr.length?arr.map(c=>`<div class="item"><div><b>${escapeHtml(c.name)}</b><small>${escapeHtml(c.mobile||'Mobile nahi')} • ${escapeHtml(c.address||'Address nahi')}</small><small>Purana balance: ${money(c.opening||0)}</small></div><div class="right"><b class="${due(c)>0?'negative':'amount'}">${money(due(c))}</b><small>Current baki</small><button class="secondary" onclick="openLedger('${c.id}')">Ledger</button></div></div>`).join(''):'<div class="empty">Customer nahi mila. Naya customer add karein.</div>'}
+function updateBillMath(){let w=Number($('weight').value)||0,r=Number($('rate').value)||0,amt=Math.round(w*r*100)/100,old=Number($('oldBalance').value)||0,rec=Number($('received').value)||0;$('billAmount').value=amt.toFixed(2);$('totalBeforePay').textContent=money(old+amt);$('newDue').textContent=money(old+amt-rec);let d=$('billDate').value;$('billDay').value=dayName(d)}
+function selectedBillCustomer(){let id=$('billCustomer').value,c=customer(id);if(c){$('billName').value=c.name;$('billMobile').value=c.mobile||'';$('billAddress').value=c.address||'';$('oldBalance').value=Math.max(0,due(c)).toFixed(2);updateBillMath()}}
+function renderLedger(){let id=$('ledgerCustomer').value;if(!id){$('ledgerDetail').innerHTML='<div class="empty">Customer select karne par poora hisaab dikhega.</div>';return}let c=customer(id);if(!c)return;let entries=[];
+entries.push({date:'—',title:'Opening / Purana balance',detail:'Shuruati udhaar',amount:0,bal:Number(c.opening||0),kind:'opening'});
+db.bills.filter(b=>b.customerId===id).forEach(b=>entries.push({date:b.date,title:'Bill • '+b.weight+' kg × '+money(b.rate),detail:'Bill '+money(b.amount)+' · Jama '+money(b.received)+' · '+b.mode,amount:b.amount-b.received,kind:'bill',obj:b}));
+db.payments.filter(p=>p.customerId===id).forEach(p=>entries.push({date:p.date,title:'Payment received',detail:p.mode,amount:-p.amount,kind:'payment',obj:p}));
+entries.sort((a,b)=>String(a.date).localeCompare(String(b.date)));let bal=Number(c.opening||0);let rows='';for(let e of entries){if(e.kind==='bill')bal+=e.obj.amount-e.obj.received;else if(e.kind==='payment')bal-=e.obj.amount;rows+=`<tr><td>${e.date}</td><td>${escapeHtml(e.title)}<br><span class="note">${escapeHtml(e.detail)}</span></td><td>${e.kind==='bill'?money(e.obj.amount):e.kind==='payment'?money(e.obj.amount):'—'}</td><td>${e.kind==='bill'?money(e.obj.received):e.kind==='payment'?money(e.obj.amount):'—'}</td><td><b>${money(bal)}</b></td></tr>`}
+let balance=due(c);let message=`Namaste ${c.name}, Santosh Murga Counter ka aapka baki hisaab ${money(balance)} hai. Kripya suvidha ke anusaar payment kar dein. Dhanyavaad.`;
+let phone=(c.mobile||'').replace(/\D/g,'');let wa=phone?`https://wa.me/${phone.length===10?'91'+phone:phone}?text=${encodeURIComponent(message)}`:'#';let sms=phone?`sms:${phone}?body=${encodeURIComponent(message)}`:'#';
+$('ledgerDetail').innerHTML=`<div class="cards"><div class="stat"><small>Customer</small><strong style="font-size:18px">${escapeHtml(c.name)}</strong><em>${escapeHtml(c.mobile||'Mobile nahi')}</em></div><div class="stat"><small>Current Udhaar</small><strong class="${balance>0?'negative':''}">${money(balance)}</strong><em>Abhi baaki</em></div></div><div class="actions"><button class="primary" onclick="shareLedger('${c.id}','wa')">WhatsApp Reminder</button><button class="secondary" onclick="shareLedger('${c.id}','sms')">SMS Reminder</button><button class="secondary" onclick="copyStatement('${c.id}')">Hisaab Copy Karein</button></div><div style="overflow:auto;margin-top:14px"><table><thead><tr><th>Date</th><th>Details</th><th>Bill</th><th>Jama</th><th>Balance</th></tr></thead><tbody>${rows}</tbody></table></div><p class="note">Ledger mein opening balance, bill aur payment sab shamil hain. Purana opening balance agar galat ho to customer record edit feature abhi prototype mein nahi hai.</p>`}
+function openLedger(id){$('ledgerCustomer').value=id;document.querySelector('[data-page="ledger"]').click();renderLedger()}
+function shareLedger(id,kind){let c=customer(id);if(!c)return;let balance=due(c);let msg=`Namaste ${c.name}, Santosh Murga Counter ka aapka baki hisaab ${money(balance)} hai. Kripya suvidha ke anusaar payment kar dein. Dhanyavaad.`;let phone=(c.mobile||'').replace(/\D/g,'');if(!phone){alert('Is customer ka mobile number add nahi hai.');return}if(kind==='wa'){let p=phone.length===10?'91'+phone:phone;window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`,'_blank')}else{location.href=`sms:${phone}?body=${encodeURIComponent(msg)}`}}
+function copyStatement(id){let c=customer(id);let txt=`Santosh Murga Counter\nCustomer: ${c.name}\nMobile: ${c.mobile||'-'}\nTotal outstanding: ${money(due(c))}`;if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>alert('Hisaab copy ho gaya.')).catch(()=>prompt('Copy karein:',txt));else prompt('Copy karein:',txt)}
+$('nav').addEventListener('click',e=>{let b=e.target.closest('button[data-page]');if(!b)return;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===b.dataset.page));if(b.dataset.page==='ledger')renderLedger()});
+$('billDate').value=today();$('paymentDate').value=today();$('billDate').addEventListener('change',updateBillMath);
+['weight','rate','received'].forEach(id=>$(id).addEventListener('input',updateBillMath));
+$('billCustomer').addEventListener('change',selectedBillCustomer);$('ledgerCustomer').addEventListener('change',renderLedger);$('customerSearch').addEventListener('input',renderCustomers);
+$('payMode').addEventListener('change',()=>{let v=$('payMode').value;if(v==='Cash'){$('cashReceived').value=$('received').value;$('onlineReceived').value=0}else if(v==='Online / UPI'){$('onlineReceived').value=$('received').value;$('cashReceived').value=0}else if(v==='Udhaar (abhi payment nahi)'){$('received').value=0;$('cashReceived').value=0;$('onlineReceived').value=0}});
+$('received').addEventListener('input',()=>{if($('payMode').value==='Cash')$('cashReceived').value=$('received').value;else if($('payMode').value==='Online / UPI')$('onlineReceived').value=$('received').value});
+$('resetBill').addEventListener('click',()=>{$('billForm').reset();$('billDate').value=today();$('billDay').value=dayName(today());$('oldBalance').value=0;updateBillMath()});
+$('customerForm').addEventListener('submit',e=>{e.preventDefault();let name=$('cName').value.trim();if(!name)return;db.customers.push({id:crypto.randomUUID(),name,mobile:$('cMobile').value.trim(),address:$('cAddress').value.trim(),opening:Number($('cOpening').value)||0,createdAt:Date.now()});save();e.target.reset();$('cOpening').value=0;alert('Customer save ho gaya!')});
+$('billForm').addEventListener('submit',e=>{e.preventDefault();let name=$('billName').value.trim();if(!name)return;let c=customer($('billCustomer').value);if(!c){c={id:crypto.randomUUID(),name,mobile:$('billMobile').value.trim(),address:$('billAddress').value.trim(),opening:0,createdAt:Date.now()};db.customers.push(c)}else{c.name=name;c.mobile=$('billMobile').value.trim();c.address=$('billAddress').value.trim()}
+let amount=Number($('billAmount').value)||0,received=Number($('received').value)||0,cash=Number($('cashReceived').value)||0,online=Number($('onlineReceived').value)||0;if(received>amount+(Number($('oldBalance').value)||0)){if(!confirm('Payment purane aur naye bill ke total se zyada hai. Phir bhi save karein?'))return}if(Math.abs(cash+online-received)>.01){alert('Cash + Online amount, Received Payment ke barabar hona chahiye.');return}
+db.bills.push({id:crypto.randomUUID(),customerId:c.id,name,mobile:c.mobile,address:c.address,date:$('billDate').value,day:dayName($('billDate').value),weight:Number($('weight').value),rate:Number($('rate').value),amount,oldBalance:Number($('oldBalance').value)||0,received,cash,online,mode:$('payMode').value,note:$('billNote').value,createdAt:Date.now()});save();alert('Bill save ho gaya! Naya balance: '+money(due(c)));$('billForm').reset();$('billDate').value=today();$('oldBalance').value=0;$('weight').value=1;$('rate').value=200;$('received').value=0;$('cashReceived').value=0;$('onlineReceived').value=0;updateBillMath();document.querySelector('[data-page="home"]').click()});
+$('paymentForm').addEventListener('submit',e=>{e.preventDefault();let c=customer($('paymentCustomer').value),amount=Number($('paymentAmount').value);if(!c||amount<=0)return;if(amount>due(c)+0.01&&!confirm('Payment current baki se zyada hai. Save karein?'))return;db.payments.push({id:crypto.randomUUID(),customerId:c.id,amount,mode:$('paymentMode').value,date:$('paymentDate').value,createdAt:Date.now()});save();alert('Payment entry save ho gayi. Naya baki: '+money(due(c)));e.target.reset();$('paymentDate').value=today()});
+function getReport(){let s=$('reportStart').value||'0000-01-01',e=$('reportEnd').value||'9999-12-31';let bills=db.bills.filter(b=>b.date>=s&&b.date<=e),pays=db.payments.filter(p=>p.date>=s&&p.date<=e);let sales=bills.reduce((a,b)=>a+b.amount,0),billpaid=bills.reduce((a,b)=>a+b.received,0),oldpaid=pays.reduce((a,p)=>a+p.amount,0);$('reportOutput').innerHTML=`<div class="cards"><div class="stat"><small>Total Sale</small><strong>${money(sales)}</strong></div><div class="stat"><small>Bill par Received</small><strong>${money(billpaid)}</strong></div><div class="stat"><small>Alag Payment Entries</small><strong>${money(oldpaid)}</strong></div><div class="stat"><small>Total Udhaar Abhi</small><strong>${money(db.customers.reduce((a,c)=>a+due(c),0))}</strong></div></div><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Customer</th><th>Weight</th><th>Rate</th><th>Bill</th><th>Received</th><th>Mode</th></tr></thead><tbody>${bills.map(b=>`<tr><td>${b.date}</td><td>${escapeHtml(b.name)}</td><td>${b.weight} kg</td><td>${money(b.rate)}</td><td>${money(b.amount)}</td><td>${money(b.received)}</td><td>${escapeHtml(b.mode)}</td></tr>`).join('')||'<tr><td colspan="7">Is date range mein bill nahi hai.</td></tr>'}</tbody></table></div>`;return {bills,pays,sales,billpaid,oldpaid}}
+$('runReport').addEventListener('click',getReport);$('reportStart').value=today().slice(0,8)+'01';$('reportEnd').value=today();
+$('exportCsv').addEventListener('click',()=>{let {bills}=getReport();let rows=[['Date','Day','Customer','Mobile','Address','Weight kg','Rate','Bill Amount','Received','Cash','Online','Mode','Old Balance','Current Due','Note'],...bills.map(b=>[b.date,b.day,b.name,b.mobile,b.address,b.weight,b.rate,b.amount,b.received,b.cash,b.online,b.mode,b.oldBalance,b.oldBalance+b.amount-b.received,b.note])];let csv=rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');download('santosh-murga-bills.csv',csv,'text/csv;charset=utf-8;')});
+function download(name,content,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+$('backup').addEventListener('click',()=>download('santosh-murga-backup.json',JSON.stringify(db,null,2),'application/json'));
+$('importFile').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let x=JSON.parse(await f.text());if(!Array.isArray(x.customers)||!Array.isArray(x.bills)||!Array.isArray(x.payments))throw Error();if(confirm('Import karne se current local data replace ho jayega. Continue?')){db=x;save();alert('Backup import ho gaya.')}}catch(err){alert('Backup file sahi nahi hai.')}e.target.value=''});
+renderAll();updateBillMath();
+</script></body></html>
